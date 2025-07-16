@@ -1,0 +1,39 @@
+# Docker
+# Build a Docker image
+# https://docs.microsoft.com/azure/devops/pipelines/languages/docker
+
+name: $(Date:yyyy).$(Date:MM)$(Date:dd).$(Rev:r)
+
+trigger:
+  - main
+
+resources:
+  - repo: self
+
+variables:
+  dockerRegistryServiceConnection: 'pa-azure-container-registry'
+  imageRepository: 'pa-postgres-exec-sp'  # Updated to reflect PostgreSQL context
+  dockerfilePath: '$(Build.SourcesDirectory)/Dockerfile'
+  tag: '$(Build.BuildNumber)'
+
+stages:
+  - stage: build_deploy
+    displayName: Build & Deploy pa-test-exec-db-sp
+    jobs:
+      - job: build_deploy
+        displayName: Build & Deploy pa-test-exec-db-sp
+        pool:
+          name: devops-agent-pool
+          #vmImage: ubuntu-latest
+        steps:
+          - task: Docker@2
+            displayName: Build and push image
+            inputs:
+              containerRegistry: $(dockerRegistryServiceConnection)
+              repository: $(imageRepository)
+              command: buildAndPush
+              dockerfile: $(dockerfilePath)
+              buildContext: '$(System.DefaultWorkingDirectory)/'
+              tags: |
+                latest
+                $(tag)
