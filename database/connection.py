@@ -21,21 +21,15 @@ class PostgreSQLDatabase:
         self.connection = self._connect()
 
     def _connect(self):
-        if self.auth_method.lower() == "entra":
-            # Use DefaultAzureCredential for Entra ID token
-            credential = DefaultAzureCredential()
-            token = credential.get_token("https://ossrdbms-aad.database.windows.net/.default").token
-            password = token  # Token acts as password
-            logger.info("Using Microsoft Entra ID authentication with DefaultAzureCredential.")
-        else:
-            password = self.password
-            logger.info("Using password-based authentication.")
-
-        dsn = (
-            f"host={self.host} port={self.port} dbname={self.database} "
-            f"user={self.username} password={password} sslmode={self.sslmode}"
-        )
-        logger.info("Connecting to PostgreSQL at %s:%s/%s", self.host, self.port, self.database)
+        credential = DefaultAzureCredential()
+        # Acquire token with the correct scope for PostgreSQL Entra auth
+        token = credential.get_token("https://ossrdbms-aad.database.windows.net/.default").token
+        # Build DSN using the token as password
+        dbhost = os.environ['PG_HOST']
+        dbname = os.environ['PG_DATABASE']
+        dbuser = urllib.parse.quote(os.environ['PG_USERNAME'])  # URL-encode username if needed
+        sslmode = os.environ.get('PG_SSLMODE', 'require')  # Default to 'require' if not set
+        dsn = f"host={dbhost} dbname={dbname} user={dbuser} password={token} sslmode={sslmode}"    
         conn = psycopg.connect(dsn, autocommit=True)
         return conn
 
