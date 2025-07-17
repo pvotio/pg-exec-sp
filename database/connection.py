@@ -1,11 +1,13 @@
 import logging
 from typing import Sequence
 
+import os
+import urllib.parse
+from azure.identity import DefaultAzureCredential
 import psycopg
 from decouple import config
-from azure.identity import DefaultAzureCredential  # New import
-
 logger = logging.getLogger(__name__)
+
 
 class PostgreSQLDatabase:
     """Simple helper around psycopg for executing stored procedures."""
